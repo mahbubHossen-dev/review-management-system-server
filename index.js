@@ -79,6 +79,7 @@ async function run() {
             res.send(result)
         })
 
+        // get reviews by id
         app.get('/reviews/:id', async (req, res) => {
             const id = req.params.id
             const filter = {service_id: id}
@@ -86,7 +87,13 @@ async function run() {
             res.send(result)
         })
 
-
+        // delete service by id
+        app.delete('/service/:id',async (req, res) => {
+            const id = req.params.id
+            const filter = {_id: new ObjectId(id)}
+            const result = await serviceCollections.deleteOne(filter)
+            res.send(result)
+        })
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
