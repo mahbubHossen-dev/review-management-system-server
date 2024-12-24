@@ -46,22 +46,51 @@ async function run() {
 
             const email = req.query.email
             let query;
-            if(email){
-                query = {email}
+            if (email) {
+                query = { email }
             }
 
             const result = await serviceCollections.find(query).toArray()
             res.send(result)
         })
 
+        // get Limited Services
+        app.get('/limitedServices', async (req, res) => {
+            const result = await serviceCollections.find().limit(6).toArray()
+            res.send(result)
+            // console.log(service)
+        })
+
 
         // get specific service
         app.get('/details/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = {_id: new ObjectId(id)}
+            const filter = { _id: new ObjectId(id) }
             const result = await serviceCollections.findOne(filter)
             res.send(result)
             console.log(id)
+        })
+
+        app.put('/serviceUpdate/:id', async (req, res) => {
+            const id = req.params.id;
+            const newService = req.body;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    photo: newService.photo,
+                    title: newService.title,
+                    company: newService.company,
+                    website: newService.website,
+                    category: newService.category,
+                    price: newService.price,
+                    deadline: newService.deadline,
+                    email: newService.email,
+                    description: newService.description
+                }
+            }
+            const result = await serviceCollections.updateOne(filter, updateDoc)
+            res.send(result)
+            // console.log(newService)
         })
 
 
@@ -75,24 +104,53 @@ async function run() {
 
         // get All Review
         app.get('/all-review', async (req, res) => {
-            const result = await reviewCollections.find().toArray()
+            const email = req.query.email
+            const filter = {email}
+            const result = await reviewCollections.find(filter).toArray()
             res.send(result)
+            // console.log(query)
         })
 
         // get reviews by id
         app.get('/reviews/:id', async (req, res) => {
             const id = req.params.id
-            const filter = {service_id: id}
+            const filter = { service_id: id }
             const result = await reviewCollections.find(filter).toArray()
             res.send(result)
         })
 
         // delete service by id
-        app.delete('/service/:id',async (req, res) => {
+        app.delete('/service/:id', async (req, res) => {
             const id = req.params.id
-            const filter = {_id: new ObjectId(id)}
+            const filter = { _id: new ObjectId(id) }
             const result = await serviceCollections.deleteOne(filter)
             res.send(result)
+        })
+
+        // delete specific review
+        app.delete('/review/:id', async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: new ObjectId(id) }
+            const result = await reviewCollections.deleteOne(filter)
+            res.send(result)
+        })
+
+        app.patch('/reviewUpdate/:id', async (req, res) => {
+            const id = req.params.id
+            const review = req.body
+
+            const filter = {_id: new ObjectId(id)}
+            const updateDoc = {
+                $set: {
+                    description: review.description,
+                    reviewRating: review.reviewRating
+                }
+            }
+            const result = await reviewCollections.updateOne(filter, updateDoc)
+            res.send(result)
+
+            console.log(id)
+            console.log(review)
         })
 
         await client.db("admin").command({ ping: 1 });
