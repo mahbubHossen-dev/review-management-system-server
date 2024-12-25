@@ -33,13 +33,13 @@ const client = new MongoClient(uri, {
 
 const verifyToken = (req, res, next) => {
     const token = req.cookies?.token;
-    if(!token){
-        return res.status(401).send({message: 'unauthorized access'})
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
     }
 
     jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
-        if(err){
-            return res.status(401).send({message: 'unauthorized access'})
+        if (err) {
+            return res.status(401).send({ message: 'unauthorized access' })
         }
 
         req.user = decoded
@@ -47,7 +47,7 @@ const verifyToken = (req, res, next) => {
     })
     // console.log(token)
 
-    
+
 }
 
 async function run() {
@@ -85,7 +85,7 @@ async function run() {
         })
 
         // Post services
-        app.post('/services', async (req, res) => {
+        app.post('/services',verifyToken, async (req, res) => {
             const service = req.body;
             const result = await serviceCollections.insertOne(service)
             res.send(result)
@@ -110,16 +110,13 @@ async function run() {
 
         // get My Services by Email
         app.get('/services', verifyToken, async (req, res) => {
-            const decodedEmail = req.user.email
-            
             const search = req.query.search
-            
             const email = req.query.email
-            console.log('Email from decoded', decodedEmail)
-            console.log('Email from query', email)
-            
-            if(decodedEmail !== email){
-                return res.status(401).send({message: 'unauthorized access'})
+
+            const decodedEmail = req.user.email
+
+            if (decodedEmail !== email) {
+                return res.status(401).send({ message: 'unauthorized access' })
             }
 
             let query = {
@@ -146,7 +143,6 @@ async function run() {
             // console.log(service)
         })
 
-
         // get specific service
         app.get('/details/:id', async (req, res) => {
             const id = req.params.id;
@@ -156,7 +152,7 @@ async function run() {
             console.log(id)
         })
 
-        app.put('/serviceUpdate/:id', async (req, res) => {
+        app.put('/serviceUpdate/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const newService = req.body;
             const filter = { _id: new ObjectId(id) }
@@ -184,12 +180,17 @@ async function run() {
             const review = req.body;
             const result = await reviewCollections.insertOne(review)
             res.send(result)
-            console.log(review)
         })
 
-        // get All Review
-        app.get('/all-review', async (req, res) => {
+        // get All Review by email
+        app.get('/all-review',verifyToken, async (req, res) => {
             const email = req.query.email
+
+            const decodedEmail = req.user.email
+
+            if (decodedEmail !== email) {
+                return res.status(401).send({ message: 'unauthorized access' })
+            }
             const filter = { email }
             const result = await reviewCollections.find(filter).toArray()
             res.send(result)
@@ -205,7 +206,7 @@ async function run() {
         })
 
         // delete service by id
-        app.delete('/service/:id', async (req, res) => {
+        app.delete('/service/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const filter = { _id: new ObjectId(id) }
             const result = await serviceCollections.deleteOne(filter)
@@ -213,14 +214,14 @@ async function run() {
         })
 
         // delete specific review
-        app.delete('/review/:id', async (req, res) => {
+        app.delete('/review/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const filter = { _id: new ObjectId(id) }
             const result = await reviewCollections.deleteOne(filter)
             res.send(result)
         })
 
-        app.patch('/reviewUpdate/:id', async (req, res) => {
+        app.patch('/reviewUpdate/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const review = req.body
 
