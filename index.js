@@ -41,14 +41,39 @@ async function run() {
             // console.log(service)
         })
 
-        // get All Services
-        app.get('/services', async (req, res) => {
-
-            const email = req.query.email
-            let query;
-            if (email) {
-                query = { email }
+        // get My Services by Email
+        app.get('/all-services', async (req, res) => {
+            const filter = req.query.filter;
+            let query = {};
+            
+            if(filter === 'Filter By Category'){
+                query = {};
             }
+
+            if(filter && filter !== 'Filter By Category'){
+                query.category = filter
+            }
+            const result = await serviceCollections.find(query).toArray()
+            res.send(result)
+        })
+
+
+        app.get('/services', async (req, res) => {
+            const search = req.query.search
+            console.log(search)
+            const email = req.query.email
+            let query = {
+                title: {
+                    $regex: search,
+                    $options: 'i',
+                }
+            }
+
+
+            if (email) {
+                query.email = email
+            }
+
 
             const result = await serviceCollections.find(query).toArray()
             res.send(result)
@@ -105,7 +130,7 @@ async function run() {
         // get All Review
         app.get('/all-review', async (req, res) => {
             const email = req.query.email
-            const filter = {email}
+            const filter = { email }
             const result = await reviewCollections.find(filter).toArray()
             res.send(result)
             // console.log(query)
@@ -139,7 +164,7 @@ async function run() {
             const id = req.params.id
             const review = req.body
 
-            const filter = {_id: new ObjectId(id)}
+            const filter = { _id: new ObjectId(id) }
             const updateDoc = {
                 $set: {
                     description: review.description,
@@ -152,6 +177,20 @@ async function run() {
             console.log(id)
             console.log(review)
         })
+
+        // get data by search
+        // app.get('/serviceSearch', async (req, res) => {
+        //     const search = req.query.search;
+        //     console.log(search)
+        //     const query = {
+        //         title: {
+        //             $regex: search,
+        //             $options: 'i',
+        //         }
+        //     }
+        //     const result = await serviceCollections.find(query).toArray()
+        //     res.send(result)
+        // })
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
