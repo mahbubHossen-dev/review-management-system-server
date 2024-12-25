@@ -2,11 +2,19 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
 var cors = require('cors')
 require('dotenv').config()
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
+
 const app = express()
 const port = process.env.PORT || 5000
 
-app.use(cors())
+app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}))
 app.use(express.json())
+app.use(cookieParser())
 
 // zG2zYX8WWfnzjvcC
 // reviewSystem
@@ -23,6 +31,25 @@ const client = new MongoClient(uri, {
     }
 });
 
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token;
+    if(!token){
+        return res.status(401).send({message: 'unauthorized access'})
+    }
+
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+        if(err){
+            return res.status(401).send({message: 'unauthorized access'})
+        }
+
+        req.user = decoded
+        next()
+    })
+    // console.log(token)
+
+    
+}
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -33,6 +60,30 @@ async function run() {
         const db = client.db('Review-System')
         const serviceCollections = db.collection('services')
         const reviewCollections = db.collection('all-reviews')
+
+        // Generate Token
+        app.post('/jwt', async (req, res) => {
+            const email = req.body;
+            const token = jwt.sign(email, process.env.SECRET_KEY, { expiresIn: '1h' })
+            // console.log(token)
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+            })
+                .send({ success: true })
+        })
+
+        // logout || remove cookies from browser
+        app.get('/logout', async (req, res) => {
+            res.clearCookie('token', {
+                maxAge: 0,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+            })
+                .send({ success: true })
+        })
+
         // Post services
         app.post('/services', async (req, res) => {
             const service = req.body;
@@ -41,27 +92,36 @@ async function run() {
             // console.log(service)
         })
 
-        // get My Services by Email
+        // get all services
         app.get('/all-services', async (req, res) => {
             const filter = req.query.filter;
             let query = {};
-            
-            if(filter === 'Filter By Category'){
+
+            if (filter === 'Filter By Category') {
                 query = {};
             }
 
-            if(filter && filter !== 'Filter By Category'){
+            if (filter && filter !== 'Filter By Category') {
                 query.category = filter
             }
             const result = await serviceCollections.find(query).toArray()
             res.send(result)
         })
 
-
-        app.get('/services', async (req, res) => {
+        // get My Services by Email
+        app.get('/services', verifyToken, async (req, res) => {
+            const decodedEmail = req.user.email
+            
             const search = req.query.search
-            console.log(search)
+            
             const email = req.query.email
+            console.log('Email from decoded', decodedEmail)
+            console.log('Email from query', email)
+            
+            if(decodedEmail !== email){
+                return res.status(401).send({message: 'unauthorized access'})
+            }
+
             let query = {
                 title: {
                     $regex: search,
@@ -178,19 +238,7 @@ async function run() {
             console.log(review)
         })
 
-        // get data by search
-        // app.get('/serviceSearch', async (req, res) => {
-        //     const search = req.query.search;
-        //     console.log(search)
-        //     const query = {
-        //         title: {
-        //             $regex: search,
-        //             $options: 'i',
-        //         }
-        //     }
-        //     const result = await serviceCollections.find(query).toArray()
-        //     res.send(result)
-        // })
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
