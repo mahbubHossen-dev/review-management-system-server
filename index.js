@@ -9,7 +9,12 @@ const app = express()
 const port = process.env.PORT || 5000
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: [
+        'http://localhost:5173',
+        'https://reviewsystem-dfd5c.web.app',
+        'https://reviewsystem-dfd5c.firebaseapp.com',
+        'https://reviewsystem-zeta.vercel.app'
+        ],
     credentials: true,
     optionsSuccessStatus: 200
 }))
@@ -64,7 +69,7 @@ async function run() {
         // Generate Token
         app.post('/jwt', async (req, res) => {
             const email = req.body;
-            const token = jwt.sign(email, process.env.SECRET_KEY, { expiresIn: '1h' })
+            const token = jwt.sign(email, process.env.SECRET_KEY, { expiresIn: '5h' })
             // console.log(token)
             res.cookie('token', token, {
                 httpOnly: true,
@@ -241,7 +246,7 @@ async function run() {
 
 
 
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
@@ -250,7 +255,9 @@ async function run() {
 }
 run().catch(console.dir);
 
-
+app.get('/', (req, res) => {
+    res.send('server is running')
+})
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
