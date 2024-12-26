@@ -13,7 +13,6 @@ app.use(cors({
         'http://localhost:5173',
         'https://reviewsystem-dfd5c.web.app',
         'https://reviewsystem-dfd5c.firebaseapp.com',
-        'https://reviewsystem-zeta.vercel.app'
         ],
     credentials: true,
     optionsSuccessStatus: 200
@@ -50,7 +49,7 @@ const verifyToken = (req, res, next) => {
         req.user = decoded
         next()
     })
-    // console.log(token)
+    
 
 
 }
@@ -70,7 +69,7 @@ async function run() {
         app.post('/jwt', async (req, res) => {
             const email = req.body;
             const token = jwt.sign(email, process.env.SECRET_KEY, { expiresIn: '5h' })
-            // console.log(token)
+            
             res.cookie('token', token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
@@ -80,13 +79,13 @@ async function run() {
         })
 
         // logout || remove cookies from browser
-        app.get('/logout', async (req, res) => {
+        app.post('/logout', async (req, res) => {
             res.clearCookie('token', {
-                maxAge: 0,
+                httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
             })
-                .send({ success: true })
+                .send({ success_logout: true })
         })
 
         // Post services
@@ -94,7 +93,7 @@ async function run() {
             const service = req.body;
             const result = await serviceCollections.insertOne(service)
             res.send(result)
-            // console.log(service)
+            
         })
 
         // get all services
@@ -145,7 +144,7 @@ async function run() {
         app.get('/limitedServices', async (req, res) => {
             const result = await serviceCollections.find().limit(6).toArray()
             res.send(result)
-            // console.log(service)
+            
         })
 
         // get specific service
@@ -154,7 +153,7 @@ async function run() {
             const filter = { _id: new ObjectId(id) }
             const result = await serviceCollections.findOne(filter)
             res.send(result)
-            console.log(id)
+            
         })
 
         app.put('/serviceUpdate/:id', verifyToken, async (req, res) => {
@@ -176,7 +175,7 @@ async function run() {
             }
             const result = await serviceCollections.updateOne(filter, updateDoc)
             res.send(result)
-            // console.log(newService)
+            
         })
 
 
@@ -199,7 +198,7 @@ async function run() {
             const filter = { email }
             const result = await reviewCollections.find(filter).toArray()
             res.send(result)
-            // console.log(query)
+            
         })
 
         // get reviews by id
@@ -240,14 +239,13 @@ async function run() {
             const result = await reviewCollections.updateOne(filter, updateDoc)
             res.send(result)
 
-            console.log(id)
-            console.log(review)
+            
         })
 
 
 
         // await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
