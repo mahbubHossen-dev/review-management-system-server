@@ -99,6 +99,8 @@ async function run() {
         // get all services
         app.get('/all-services', async (req, res) => {
             const filter = req.query.filter;
+            const sort = req.query.sort
+            
             let query = {};
 
             if (filter === 'Filter By Category') {
@@ -108,6 +110,19 @@ async function run() {
             if (filter && filter !== 'Filter By Category') {
                 query.category = filter
             }
+
+            if(sort === 'ascending'){
+                const result = await serviceCollections.find(query).sort({price: 1}).toArray()
+                res.send(result)
+                return 
+            }
+
+            if(sort === 'descending'){
+                const result = await serviceCollections.find(query).sort({price: -1}).toArray()
+                res.send(result)
+                return 
+            }
+
             const result = await serviceCollections.find(query).toArray()
             res.send(result)
         })
