@@ -216,6 +216,12 @@ async function run() {
             
         })
 
+        // get all reviews
+        app.get('/all-reviews', async (req, res) => {
+            const result = await reviewCollections.find().toArray()
+            res.send(result)
+        })
+
         // get reviews by id
         app.get('/reviews/:id', async (req, res) => {
             const id = req.params.id
